@@ -17,6 +17,7 @@
 package com.example.android.trackmysleepquality.sleeptracker
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -56,6 +57,9 @@ class SleepTrackerFragment : Fragment() {
         val viewModel=ViewModelProvider(this,viewModelFactory)
                 .get(SleepTrackerViewModel::class.java)
 
+
+
+
         /*then create the data TAG in the "fragment_sleep_tracker.xml"
          *and create  the "sleepTrackerViewModel" variable
          */
@@ -64,6 +68,7 @@ class SleepTrackerFragment : Fragment() {
         //Assign the sleepTrackerViewModel binding variable to the sleepTrackerViewModel
 
         binding.sleepTrackerViewModel=viewModel
+        binding.setLifecycleOwner(this)
 
         return binding.root
     }

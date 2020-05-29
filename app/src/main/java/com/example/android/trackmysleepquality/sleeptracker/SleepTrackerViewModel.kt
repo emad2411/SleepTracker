@@ -17,8 +17,15 @@
 package com.example.android.trackmysleepquality.sleeptracker
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
 import com.example.android.trackmysleepquality.database.SleepDatabaseDao
+import com.example.android.trackmysleepquality.database.SleepNight
+import com.example.android.trackmysleepquality.formatNights
+import kotlinx.coroutines.*
+import kotlin.math.log
 
 /**
  * ViewModel for SleepTrackerFragment.
@@ -29,5 +36,106 @@ import com.example.android.trackmysleepquality.database.SleepDatabaseDao
 class SleepTrackerViewModel(
         val database: SleepDatabaseDao,
         application: Application) : AndroidViewModel(application) {
+    //  1- create the Job
+    var viewModelJob= Job()
+    //3- Define a uiScope for the coroutines
+    private val uiScope= CoroutineScope(Dispatchers.Main+viewModelJob)
+
+    //4- Define a variable, tonight, to hold the current night, and make it MutableLiveData
+    private val tonight=MutableLiveData<SleepNight?>()
+
+    //5- Define a variable, nights. Then getAllNights() from the database and assign to the nights variable
+    private val nights=database.getAllNights()
+
+
+    var nightsString = Transformations.map(nights) { nights ->
+        formatNights(nights, application.resources)
+    }
+    //6- To initialize the tonight variable, create an init block and call initializeTonight()
+    init {
+        initializeTonight()
+    }
+   /* 7- Implement initializeTonight(). In the uiScope, launch a coroutine.
+    Inside, get the value for tonight from the database by calling getTonightFromDatabase(),
+    which you will define in the next step, and assign it to tonight.value:
+    */
+    private fun initializeTonight() {
+        uiScope.launch {
+        tonight.value=getTonightFromDatabase()
+        }
+    }
+
+    /* 8- Implement getTonightFromDatabase(). Define
+    is as a private suspend function that returns a nullable SleepNight,
+    if there is no current started sleepNight
+
+     */
+
+    private suspend fun getTonightFromDatabase(): SleepNight? {
+        //9- inside the function body, return the result
+        // from a coroutine that runs in the Dispatchers.IO context:
+        return withContext(Dispatchers.IO){
+            var night:SleepNight?= database.getTonight()
+            if (night?.startTimeMilli != night?.endTimeMilli){
+                night= null
+            }
+            night
+        }
+    }
+
+    //10-handle the start Button Click
+    fun onStartTracking(){
+        // 11- run UI Scope
+        uiScope.launch {
+            val newNight=SleepNight()
+            insert(newNight)
+            //13- assign tonight to the latest night in the database
+            tonight.value=getTonightFromDatabase()
+        }
+    }
+
+    //12- implement the insert function on IO scope and insert the current night
+    private suspend fun insert(newNight: SleepNight){
+        withContext(Dispatchers.IO){
+            database.insert(newNight)
+        }
+    }
+
+    // 13- handle Stop Button
+     fun onStopTracking(){
+        uiScope.launch {
+            //14- get the tonight and update it
+            val oldNight=tonight.value ?:return@launch
+            oldNight.endTimeMilli=System.currentTimeMillis()
+            update(oldNight)
+        }
+    }
+
+    private suspend fun update(night:SleepNight){
+        withContext(Dispatchers.IO){
+            database.update(night)
+        }
+    }
+        //15- handle the clear button
+    fun onClear(){
+        uiScope.launch {
+            clear()
+            tonight.value=null
+        }
+    }
+
+    private suspend fun clear(){
+        withContext(Dispatchers.IO){
+            database.clear()
+        }
+    }
+
+            override fun onCleared() {
+        super.onCleared()
+        // 2- clear the Job in onCleared
+        viewModelJob.cancel()
+
+    }
+
 }
 
