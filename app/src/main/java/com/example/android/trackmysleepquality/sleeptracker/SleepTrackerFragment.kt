@@ -17,13 +17,14 @@
 package com.example.android.trackmysleepquality.sleeptracker
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.example.android.trackmysleepquality.R
 import com.example.android.trackmysleepquality.database.SleepDatabase
 import com.example.android.trackmysleepquality.databinding.FragmentSleepTrackerBinding
@@ -47,17 +48,15 @@ class SleepTrackerFragment : Fragment() {
         val binding: FragmentSleepTrackerBinding = DataBindingUtil.inflate(
                 inflater, R.layout.fragment_sleep_tracker, container, false)
         //get a reference to the application context.
-        val application= requireNotNull(this.activity).application
+        val application = requireNotNull(this.activity).application
         //get a reference to the DAO of the database
-        val dataSource=SleepDatabase.getInstance(application).sleepDatabaseDao
+        val dataSource = SleepDatabase.getInstance(application).sleepDatabaseDao
         //Create an instance of the viewModelFactory and pass in dataSource as well as application.
-        val viewModelFactory=SleepTrackerViewModelFactory(dataSource,application)
+        val viewModelFactory = SleepTrackerViewModelFactory(dataSource, application)
         //Get a reference to the SleepTrackerViewModel To the ViewModelProvider,
         // specify to use the viewModelFactory and get an instance of SleepTrackerViewModel::class.java
-        val viewModel=ViewModelProvider(this,viewModelFactory)
+        val viewModel = ViewModelProvider(this, viewModelFactory)
                 .get(SleepTrackerViewModel::class.java)
-
-
 
 
         /*then create the data TAG in the "fragment_sleep_tracker.xml"
@@ -67,8 +66,21 @@ class SleepTrackerFragment : Fragment() {
 
         //Assign the sleepTrackerViewModel binding variable to the sleepTrackerViewModel
 
-        binding.sleepTrackerViewModel=viewModel
+        binding.sleepTrackerViewModel = viewModel
         binding.setLifecycleOwner(this)
+
+        viewModel.navigationToSleepQuality.observe(viewLifecycleOwner, Observer {night ->
+            night?.let {
+                this.findNavController()
+                        .navigate(
+                        SleepTrackerFragmentDirections
+                                .actionSleepTrackerFragmentToSleepQualityFragment(night.nightId)
+                        )
+                viewModel.doneNavigating()
+            }
+        })
+
+
 
         return binding.root
     }
