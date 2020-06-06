@@ -55,6 +55,16 @@ class SleepTrackerViewModel(
         formatNights(nights, application.resources)
     }
 
+    var startButtonVisible=Transformations.map(tonight){
+        null==it
+    }
+    var stopButtonVisible=Transformations.map(tonight){
+        null!=it
+    }
+    var clearButtonVisible=Transformations.map(nights){
+        it?.isNotEmpty()
+    }
+
     //6- To initialize the tonight variable, create an init block and call initializeTonight()
     init {
         initializeTonight()
