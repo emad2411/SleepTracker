@@ -17,6 +17,7 @@
 package com.example.android.trackmysleepquality.sleeptracker
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +26,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.RecyclerView
 import com.example.android.trackmysleepquality.R
 import com.example.android.trackmysleepquality.database.SleepDatabase
 import com.example.android.trackmysleepquality.databinding.FragmentSleepTrackerBinding
@@ -60,10 +62,19 @@ class SleepTrackerFragment : Fragment() {
 
         val adapter:SleepNightAdapter= SleepNightAdapter()
         binding.sleepList.adapter=adapter
+        // the following observer to scroll the list to first position
+        // when an item added to the list
+        adapter.registerAdapterDataObserver(object :RecyclerView.AdapterDataObserver(){
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                Log.i("TAG", itemCount.toString())
+                binding.sleepList.scrollToPosition(0)
+            }
+        })
 
         viewModel.nights.observe(viewLifecycleOwner, Observer {
             it?.let {
               adapter.submitList(it)
+                binding.sleepList.scrollToPosition(0)
             }
         })
 
@@ -88,11 +99,6 @@ class SleepTrackerFragment : Fragment() {
                 viewModel.doneNavigating()
             }
         })
-
-
-
-
-
         return binding.root
     }
 }
