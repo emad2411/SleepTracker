@@ -44,7 +44,7 @@ class SleepTrackerViewModel(
     private val tonight = MutableLiveData<SleepNight?>()
 
     //5- Define a variable, nights. Then getAllNights() from the database and assign to the nights variable
-    private val nights = database.getAllNights()
+    val nights = database.getAllNights()
 
     private val _navigationToSleepQuality=MutableLiveData<SleepNight?>()
     val navigationToSleepQuality:LiveData<SleepNight?> get() = _navigationToSleepQuality
